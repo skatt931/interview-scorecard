@@ -4,6 +4,8 @@
   --color-canvas: #f7f4f1;
   --color-cream: #efe9e1;
   --color-ink: #2c2637;
+  /* Dark fills need an explicit hover step — a brightness filter is invisible here. */
+  --color-ink-soft: #473e5b;
 
   /* Accenture purple carries every action; the deeper purple carries the brand. */
   --color-brand: #7500c0;
@@ -11,6 +13,7 @@
   --color-accent: #a100ff;
   --color-accent-dark: #8b00dd;
   --color-coral: #ee5586;
+  --color-coral-dark: #d93f70;
 
   /* Judgement colours drawn from the same family. */
   --color-good: #14706d;
