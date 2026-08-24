@@ -53,6 +53,14 @@ export const Field = ({
   </label>
 );
 
+export const Required = () => (
+  <span className="text-[11px] font-medium text-mid/80">Required</span>
+);
+
+export const Optional = () => (
+  <span className="text-[11px] font-medium text-stone-400">Optional</span>
+);
+
 export const Kbd = ({ children }: { children: ReactNode }) => (
   <kbd className="rounded-md border border-stone-300 bg-white px-1.5 py-px font-sans text-[10px] font-semibold text-stone-500">
     {children}

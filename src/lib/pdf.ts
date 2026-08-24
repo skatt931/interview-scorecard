@@ -1,6 +1,6 @@
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
-import { COMPETENCIES, type Scorecard } from './scorecard'
+import { COMPETENCIES, dateStamp, type Entry, type Scorecard } from './scorecard'
 
 const MARGIN = 56
 
@@ -40,7 +40,19 @@ export function buildPdf(data: Scorecard): jsPDF {
     y += gap
   }
 
-  const interviewers = [data.interviewer1, data.interviewer2].map(inline).filter(Boolean).join(', ')
+  const who1 = inline(data.interviewer1)
+  const who2 = inline(data.interviewer2)
+  const interviewers = [who1, who2].filter(Boolean).join(', ')
+
+  /** Label each voice only when there are two of them; otherwise it is just noise. */
+  const notesCell = (e: Entry) => {
+    const a = clean(e.notes1)
+    const b = clean(e.notes2)
+    if (a && b) {
+      return `${who1 || '1st interviewer'}: ${a}\n\n${who2 || '2nd interviewer'}: ${b}`
+    }
+    return a || b
+  }
 
   const interviewee = inline(data.interviewee)
   const stage = inline(data.stage)
@@ -58,7 +70,7 @@ export function buildPdf(data: Scorecard): jsPDF {
     body: COMPETENCIES.map((c) => [
       c.label,
       inline(data.ratings[c.id].rating) || '—',
-      clean(data.ratings[c.id].notes) || '—',
+      notesCell(data.ratings[c.id]) || '—',
     ]),
     styles: { font: 'helvetica', fontSize: 10, cellPadding: 8, lineColor: [222, 222, 222], lineWidth: 0.5, valign: 'top' },
     headStyles: { fillColor: [245, 245, 245], textColor: [23, 23, 23], fontStyle: 'bold' },
@@ -90,13 +102,8 @@ export function buildPdf(data: Scorecard): jsPDF {
   return doc
 }
 
-const pad = (n: number) => String(n).padStart(2, '0')
-
-/** "12 08 2026" — the day the scorecard is written up. */
-const stamp = (d = new Date()) => `${pad(d.getDate())} ${pad(d.getMonth() + 1)} ${d.getFullYear()}`
-
 export function downloadPdf(data: Scorecard) {
-  const name = [inline(data.interviewee), inline(data.stage), stamp()]
+  const name = [inline(data.interviewee), inline(data.stage), dateStamp()]
     .filter(Boolean)
     .join(' ')
     // Strip only what a filesystem rejects; spaces and parentheses are wanted here.

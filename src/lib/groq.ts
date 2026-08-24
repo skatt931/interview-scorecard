@@ -1,4 +1,4 @@
-import { COMPETENCIES, STAGES, emptyScorecard, type Scorecard } from './scorecard'
+import { COMPETENCIES, STAGES, type ModelScorecard } from './scorecard'
 
 const BASE = 'https://api.groq.com/openai/v1'
 
@@ -36,14 +36,25 @@ const stringOrEmpty = (options: readonly string[]) => ({
 const schema = {
   type: 'object',
   additionalProperties: false,
-  required: ['interviewee', 'stage', 'interviewer1', 'interviewer2', 'ratings', 'notes1', 'notes2'],
+  required: ['interviewee', 'stage', 'interviewer1', 'interviewer2', 'ratings', 'notes'],
   properties: {
     interviewee: { type: 'string', description: 'Candidate first name only, or "" if not stated' },
     stage: stringOrEmpty(STAGES),
-    interviewer1: { type: 'string' },
-    interviewer2: { type: 'string' },
-    notes1: { type: 'string', description: 'Free-form closing remarks from the 1st interviewer, or ""' },
-    notes2: { type: 'string', description: 'Free-form closing remarks from the 2nd interviewer, or ""' },
+    interviewer1: {
+      type: 'string',
+      description:
+        'Name of the interviewer speaking / named first. Take whatever name is given, first name alone is fine. "" if genuinely not stated.',
+    },
+    interviewer2: {
+      type: 'string',
+      description:
+        'Name of the other interviewer, e.g. from "me and Maria were on the call" -> "Maria". "" if not stated.',
+    },
+    notes: {
+      type: 'string',
+      description:
+        'Free-form closing remarks from the interviewer speaking in this transcript, or ""',
+    },
     ratings: {
       type: 'object',
       additionalProperties: false,
@@ -75,9 +86,12 @@ Rules:
 - Each notes field should be 1-3 sentences.
 - "interviewee" must be a first name only.
 - Map loose spoken wording onto the allowed rating values (e.g. "he did fine" -> "OK", "strong yes" -> "Highly recommended").
-- Map the round onto a stage value: theory/questions -> "1st tech round (Theory)", live coding/pairing/practical -> "2nd tech round Live coding".`
+- Map the round onto a stage value: theory/questions -> "1st tech round (Theory)", live coding/pairing/practical -> "2nd tech round Live coding", intro/culture/getting-to-know call -> "Chemistry check".
+- Interviewer names: the speaker is interviewer1, anyone they mention sitting in ("me and Maria", "Maria was with me") is interviewer2. A bare first name is a valid answer - do not hold out for a surname.
+- There is one voice in the transcript. Put its per-competency notes in "notes" for each competency and its closing remarks in the top-level "notes".
+- The transcript may contain corrections recorded later, separated by "---". Later statements always override earlier ones for the same field.`
 
-export async function structure(transcript: string, apiKey: string): Promise<Scorecard> {
+export async function structure(transcript: string, apiKey: string): Promise<ModelScorecard> {
   const res = await fetch(`${BASE}/chat/completions`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
@@ -96,6 +110,5 @@ export async function structure(transcript: string, apiKey: string): Promise<Sco
   })
   if (!res.ok) throw new Error(`Structuring failed: ${await readError(res)}`)
 
-  const parsed = JSON.parse((await res.json()).choices[0].message.content) as Scorecard
-  return { ...emptyScorecard(), ...parsed }
+  return JSON.parse((await res.json()).choices[0].message.content) as ModelScorecard
 }

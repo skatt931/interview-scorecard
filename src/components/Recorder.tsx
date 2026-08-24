@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Button } from "./ui";
 
 const BARS = 9;
@@ -14,9 +14,12 @@ const clock = (s: number) =>
 export function Recorder({
   onRecorded,
   disabled,
+  aside,
 }: {
   onRecorded: (audio: Blob) => void;
   disabled?: boolean;
+  /** Rendered beside the button while idle. */
+  aside?: ReactNode;
 }) {
   const [recording, setRecording] = useState(false);
   const [seconds, setSeconds] = useState(0);
@@ -134,22 +137,7 @@ export function Recorder({
           ))}
         </div>
 
-        {!recording && (
-            <label className="cursor-pointer text-xs font-semibold text-stone-500 underline-offset-4 transition-colors hover:text-accent hover:underline">
-            or upload a file
-            <input
-              type="file"
-              accept="audio/*"
-              className="hidden"
-              disabled={disabled}
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) onRecorded(file);
-                e.target.value = "";
-              }}
-            />
-          </label>
-        )}
+        {!recording && aside}
       </div>
       {error && <p className="text-xs text-red-600">{error}</p>}
     </div>
